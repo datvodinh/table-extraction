@@ -4,46 +4,35 @@ from PIL import Image
 from transformers import pipeline
 
 
-class TableDectectionModel:
+class TableStructureRecognitionModel:
     def __init__(self, device="cpu") -> None:
         self.pipeline = pipeline(
             task="object-detection",
-            model="microsoft/table-transformer-detection",
+            model="microsoft/table-transformer-structure-recognition",
             device=device
         )
-        self.device = device
 
     def predict(self, image: Image):
         """
         Returns:
         results = [
             {
-                'score': 0.9997608065605164,
-                'label': 'table',
-                'box': {'xmin': 19, 'ymin': 134, 'xmax': 668, 'ymax': 398}
-            }
-        ]
+                'score': 0.9984303116798401,
+                'label': 'table column',
+                'box': {'xmin': 405, 'ymin': 49, 'xmax': 448, 'ymax': 550}
+            },
+            ...
+            ]
         """
         return self.pipeline.predict(image)
 
 
-class TableDetectionInference:
+class TableStructureRecognitionInference:
     def __init__(self, device: str = "cpu") -> None:
-        self.model = TableDectectionModel(device)
+        self.model = TableStructureRecognitionModel(device=device)
 
     def _pil_to_numpy(self, image: Image):
         return np.asarray(image)
-
-    def _draw_bounding_boxes(self, images, results):
-        for res in results:
-            score, label, box = res['score'], res['label'], res['box']
-            left, top = int(box['xmin']), int(box['ymin'])
-            right, bottom = int(box['xmax']), int(box['ymax'])
-            label = f"{label}: {round(score, 3)}"
-            imgHeight, imgWidth, _ = images.shape
-            thick = int((imgHeight + imgWidth) // 900)
-            cv2.rectangle(images, (left, top), (right, bottom), (0, 255, 0), thick)
-        return images
 
     def _get_bounding_boxes(self, images: np.ndarray, results: list[str, str, dict]):
         for res in results:
@@ -54,17 +43,29 @@ class TableDetectionInference:
             res["image"] = crop_image
         return results
 
+    def _draw_bounding_boxes(self, images: np.ndarray, results: list[str, str, dict]):
+        for res in results:
+            score, label, box = res['score'], res['label'], res['box']
+            left, top = int(box['xmin']), int(box['ymin'])
+            right, bottom = int(box['xmax']), int(box['ymax'])
+            label = f"{label}: {round(score, 3)}"
+            imgHeight, imgWidth, _ = images.shape
+            thick = int((imgHeight + imgWidth) // 900)
+            cv2.rectangle(images, (left, top), (right, bottom), (0, 255, 0), thick)
+        return images
+
     def predict(self, image: Image):
         """
         Returns:
         results = [
             {
-                'score': 0.9997608065605164,
-                'label': 'table',
-                'box': {'xmin': 19, 'ymin': 134, 'xmax': 668, 'ymax': 398},
-                'image': np.array([])
-            }
-        ]
+                'score': 0.9984303116798401,
+                'label': 'table column',
+                'box': {'xmin': 405, 'ymin': 49, 'xmax': 448, 'ymax': 550},
+                'image': np.array([...])
+            },
+            ...
+            ]
         """
         results = self.model.predict(image)
         return self._get_bounding_boxes(
