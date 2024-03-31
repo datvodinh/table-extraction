@@ -12,7 +12,7 @@ class TableStructureRecognitionModel:
             device=device
         )
 
-    def predict(self, image: Image):
+    def predict(self, image: Image.Image):
         """
         Returns:
         results = [
@@ -31,8 +31,11 @@ class TableStructureRecognitionInference:
     def __init__(self, device: str = "cpu") -> None:
         self.model = TableStructureRecognitionModel(device=device)
 
-    def _pil_to_numpy(self, image: Image):
+    def _pil_to_numpy(self, image: Image.Image):
         return np.asarray(image)
+
+    def _numpy_to_pil(self, image: np.ndarray):
+        return Image.fromarray(image)
 
     def _get_bounding_boxes(self, images: np.ndarray, results: list[str, str, dict]):
         for res in results:
@@ -54,7 +57,7 @@ class TableStructureRecognitionInference:
             cv2.rectangle(images, (left, top), (right, bottom), (0, 255, 0), thick)
         return images
 
-    def predict(self, image: Image):
+    def predict(self, image: Image.Image | np.ndarray):
         """
         Returns:
         results = [
@@ -67,17 +70,21 @@ class TableStructureRecognitionInference:
             ...
             ]
         """
+        if isinstance(image, np.ndarray):
+            image = self._numpy_to_pil(image)
         results = self.model.predict(image)
         return self._get_bounding_boxes(
             images=self._pil_to_numpy(image),
             results=results
         )
 
-    def predict_visualize(self, image: Image):
+    def predict_visualize(self, image: Image.Image):
         """
         Returns:
         image = np.array([])
         """
+        if isinstance(image, np.ndarray):
+            image = self._numpy_to_pil(image)
         results = self.model.predict(image)
         return self._draw_bounding_boxes(
             images=self._pil_to_numpy(image),

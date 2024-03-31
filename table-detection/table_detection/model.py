@@ -13,7 +13,7 @@ class TableDectectionModel:
         )
         self.device = device
 
-    def predict(self, image: Image):
+    def predict(self, image: Image.Image):
         """
         Returns:
         results = [
@@ -31,10 +31,13 @@ class TableDetectionInference:
     def __init__(self, device: str = "cpu") -> None:
         self.model = TableDectectionModel(device)
 
-    def _pil_to_numpy(self, image: Image):
+    def _pil_to_numpy(self, image: Image.Image):
         return np.asarray(image)
 
-    def _draw_bounding_boxes(self, images, results):
+    def _numpy_to_pil(self, image: np.ndarray):
+        return Image.fromarray(image)
+
+    def _draw_bounding_boxes(self, images: np.ndarray, results: list[str, str, dict]):
         for res in results:
             score, label, box = res['score'], res['label'], res['box']
             left, top = int(box['xmin']), int(box['ymin'])
@@ -54,7 +57,7 @@ class TableDetectionInference:
             res["image"] = crop_image
         return results
 
-    def predict(self, image: Image):
+    def predict(self, image: Image.Image | np.ndarray):
         """
         Returns:
         results = [
@@ -66,17 +69,21 @@ class TableDetectionInference:
             }
         ]
         """
+        if isinstance(image, np.ndarray):
+            image = self._numpy_to_pil(image)
         results = self.model.predict(image)
         return self._get_bounding_boxes(
             images=self._pil_to_numpy(image),
             results=results
         )
 
-    def predict_visualize(self, image: Image):
+    def predict_visualize(self, image: Image.Image):
         """
         Returns:
         image = np.array([])
         """
+        if isinstance(image, np.ndarray):
+            image = self._numpy_to_pil(image)
         results = self.model.predict(image)
         return self._draw_bounding_boxes(
             images=self._pil_to_numpy(image),
