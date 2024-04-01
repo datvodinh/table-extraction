@@ -1,4 +1,3 @@
-from dataclasses import dataclass
 from argparse import Namespace
 
 
@@ -33,4 +32,4 @@ class TransformerOCRConfig:
         for k, v in args.__dict__.items():
             if hasattr(self, k) and v is not None and k != "stage":
                 setattr(self, k, v)
-        print("LDM Config Updated!")
+        print("Config Updated!")

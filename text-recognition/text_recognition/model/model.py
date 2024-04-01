@@ -5,6 +5,7 @@ from einops import rearrange
 from transformers import GPT2Model
 from text_recognition.config import TransformerOCRConfig
 from torch.optim.lr_scheduler import OneCycleLR
+from einops import rearrange
 
 
 class PatchEmbedding(nn.Module):
@@ -61,10 +62,10 @@ class GPT2Decoder(pl.LightningModule):
         pos = torch.arange(0, x.shape[-1], dtype=torch.long, device=x.device)  # shape (t)
         return self._model.wte(x) + self._model.wpe(pos)
 
-    def _decoder_blocks(self, x: torch.Tensor):
+    def _decoder_blocks(self, x: torch.Tensor, attention_mask):
         x = self._model.drop(x)
         for block in self._model.h:
-            x = block(hidden_states=x)[0]
+            x = block(hidden_states=x, attention_mask=attention_mask)[0]
         x = self._model.ln_f(x)
         return self.fc(x)
 
@@ -78,10 +79,11 @@ class GPT2Decoder(pl.LightningModule):
         text_embed = self._word_embed(labels)  # B S E
         merge_inputs = torch.cat([image_embed, text_embed], dim=1)
         img_attn_mask = torch.ones(
-            (text_embed.shape[0], text_embed.shape[1]), device=text_embed.device
+            (image_embed.shape[0], image_embed.shape[1]), device=text_embed.device
         )
         full_attn_mask = torch.cat([img_attn_mask, attention_mask], dim=1)
-        return self._decoder_blocks(merge_inputs, attention_mask=full_attn_mask)
+        logits = self._decoder_blocks(merge_inputs, attention_mask=full_attn_mask)
+        return logits[:, image_embed.shape[1]:, :]
 
 
 class DecoderOnlyTransformerOCR(pl.LightningModule):
@@ -107,12 +109,13 @@ class DecoderOnlyTransformerOCR(pl.LightningModule):
     ):
         return self.model(images, labels, attention_mask)
 
-    def _forward_step(self, batch: tuple, batch_idx: int, stage: str = "train"):
+    def _forward_step(self, batch: tuple, stage: str = "train"):
         images, labels, labels_shifted, attn_mask = batch
         logits = self.forward(images, labels, attn_mask)
-        logits = logits[:, images.shape[1]:, :]
+        labels_shifted = rearrange(labels_shifted, "b s -> (b s)")
+        logits = rearrange(logits, "b s c -> (b s) c")
         loss = self.criterion(logits, labels_shifted)
-        acc = torch.mean(torch.argmax(logits, dim=-1) == labels_shifted)
+        acc = (torch.argmax(logits, dim=-1) == labels_shifted).float().mean()
         self.log_dict({
             f"loss_{stage}": loss,
             f"acc_{stage}": acc
@@ -120,10 +123,10 @@ class DecoderOnlyTransformerOCR(pl.LightningModule):
         return loss
 
     def training_step(self, batch: tuple, batch_idx: int):
-        return self._forward_step(batch, batch_idx, stage="train")
+        return self._forward_step(batch, stage="train")
 
-    def validation_step(self, batch, batch_idx):
-        return self._forward_step(batch, batch_idx, stage="val")
+    def validation_step(self, batch: tuple, batch_idx: int):
+        return self._forward_step(batch, stage="val")
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(

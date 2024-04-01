@@ -8,9 +8,6 @@ from text_recognition.model import DecoderOnlyTransformerOCR
 from text_recognition.datamodule import OCRDataModule
 from text_recognition.util import get_training_parser, ModelCallback
 
-torch.multiprocessing.set_sharing_strategy('file_system')
-
-
 def main():
     # PARSERs
     parser = get_training_parser()

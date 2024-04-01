@@ -2,13 +2,11 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import numpy as np
 import cv2
-import PIL
 
 
 class OCRTransform:
     def __init__(self, img_size=(64, 256), stage="train") -> None:
         self.img_size = img_size
-        self.enhance = Enhance()
         if stage == "train":
             Pad_or_Rezise = A.OneOf([
                 A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1],
@@ -22,7 +20,6 @@ class OCRTransform:
                 A.SafeRotate(limit=10, interpolation=3, border_mode=cv2.BORDER_CONSTANT, value=(0, 0, 0), p=1)
             ])
             self.transform = A.Compose([
-                InvertRescale(img_size=self.img_size),  # dict
                 A.GridDistortion(distort_limit=0.1, border_mode=0, interpolation=3,
                                  value=[0, 0, 0], p=.5),
                 A.Defocus(radius=(1, 3), p=0.5),
@@ -31,14 +28,8 @@ class OCRTransform:
                 A.RandomBrightnessContrast(.1, .2, True, p=0.5),
                 A.ImageCompression(95, p=.5),
                 A.OneOf([
-                    A.Compose([
-                        Curve_or_Rotate,
-                        Pad_or_Rezise
-                    ]),
-                    A.Compose([
-                        Pad_or_Rezise,
-                        Curve_or_Rotate
-                    ]),
+                    A.Compose([Curve_or_Rotate, Pad_or_Rezise]),
+                    A.Compose([Pad_or_Rezise, Curve_or_Rotate]),
                 ], p=1),
                 A.Normalize(mean=(0., 0., 0.), std=(1., 1., 1.)),
                 ToTensorV2()
@@ -46,7 +37,6 @@ class OCRTransform:
 
         else:
             self.transform = A.Compose([
-                InvertRescale(img_size=self.img_size),
                 A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1],
                               position=A.PadIfNeeded.PositionType.CENTER,
                               border_mode=cv2.BORDER_CONSTANT, value=(0, 0, 0)),
@@ -55,42 +45,12 @@ class OCRTransform:
             ])
 
     def __call__(self, image):
-        img = np.asarray(self.enhance(image))
-        return self.transform(image=img)['image']
-
-
-class InvertRescale:
-    def __init__(self, img_size=(64, 256)) -> None:
-        self.img_size = img_size
-
-    def __call__(self, image):
-        height, width = image.shape
-        img = image
-        img = cv2.bitwise_not(img)
-        img = cv2.resize(img, (min(self.img_size[1], int(self.img_size[0]/height*width)), self.img_size[0]))
-        img = np.expand_dims(img, axis=2)
-        img = np.concatenate([img, img, img], axis=2)
-        return {"image": img}
-
-
-class Enhance:
-    def __init__(self):
-        pass
-
-    def __call__(self, img, mag=-1, p=1.):
-        if np.random.uniform(0, 1) > p:
-            return img
-
-        c = [.1, .7, 1.3]
-        if mag < 0 or mag >= len(c):
-            index = np.random.randint(0, len(c))
-        else:
-            index = mag
-        c = c[index]
-        magnitude = np.random.uniform(c, c+.6)
-        img = PIL.ImageEnhance.Sharpness(img).enhance(magnitude)
-        img = PIL.ImageOps.autocontrast(img)
-        return img
+        height, width, _ = image.shape
+        image = cv2.resize(
+            image,
+            (min(self.img_size[1], int(self.img_size[0]/height*width)), self.img_size[0])
+        )
+        return self.transform(image=image)['image']
 
 
 class Curve:

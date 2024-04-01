@@ -161,4 +161,6 @@ cython_debug/
 *.ipynb
 *.png
 *.jpg
+*.zip
+data/
 checkpoints
