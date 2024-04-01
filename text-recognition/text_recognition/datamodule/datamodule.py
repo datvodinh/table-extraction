@@ -37,11 +37,13 @@ class OCRDataset(Dataset):
 class OCRDataModule(pl.LightningDataModule):
     def __init__(
         self,
-        config: TransformerOCRConfig
+        config: TransformerOCRConfig,
+        data_dir: str
     ):
         super().__init__()
         self.in_channels = config.in_channels
         self.config = config
+        self.data_dir = data_dir
 
         self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2', trust_remote_code=True)
         self.loader = partial(
@@ -69,7 +71,7 @@ class OCRDataModule(pl.LightningDataModule):
     def setup(self, stage: str):
         if stage == "fit":
             list_path = []
-            for folder, _, files in os.walk("/kaggle/working/data"):
+            for folder, _, files in os.walk(self.data_dir):
                 for name in files:
                     for ftype in [".png", ".jpg", ".jpeg"]:
                         if ftype in name:

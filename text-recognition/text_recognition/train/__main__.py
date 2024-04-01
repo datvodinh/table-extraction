@@ -35,7 +35,7 @@ def main():
         logger = None
 
     # DATAMODULE
-    datamodule = OCRDataModule(config)
+    datamodule = OCRDataModule(config, data_dir=args.data_dir)
     # MODEL
     model = DecoderOnlyTransformerOCR(config)
     # CALLBACK
