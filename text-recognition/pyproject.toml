@@ -14,6 +14,7 @@ wandb = "^0.16.5"
 albumentations = "^1.4.2"
 einops = "^0.7.0"
 opencv-python = "^4.9.0.80"
+transformers = "^4.39.2"
 
 
 [build-system]
