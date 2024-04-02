@@ -4,7 +4,7 @@ import random
 import torch
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader, Dataset
-from text_recognition.config import TransformerOCRConfig
+from text_recognition.config import SwinTransformerOCRConfig
 from text_recognition.datamodule.transform import OCRTransform
 from text_recognition.tokenizer import OCRTokenizer
 
@@ -12,7 +12,7 @@ from text_recognition.tokenizer import OCRTokenizer
 class OCRDataset(Dataset):
     def __init__(
         self,
-        config: TransformerOCRConfig,
+        config: SwinTransformerOCRConfig,
         list_path: list,
         stage: str = "train"
     ):
@@ -37,14 +37,14 @@ class OCRDataset(Dataset):
 class OCRDataModule(pl.LightningDataModule):
     def __init__(
         self,
-        config: TransformerOCRConfig,
+        config: SwinTransformerOCRConfig,
         data_dir: str
     ):
         super().__init__()
         self.in_channels = config.in_channels
         self.config = config
         self.data_dir = data_dir
-        self.tokenizer = OCRTokenizer(config)
+        self.tokenizer = OCRTokenizer()
 
         self.get_list_path()
 
@@ -69,7 +69,7 @@ class OCRDataModule(pl.LightningDataModule):
     def collate_fn(self, batch):
         images = torch.stack([b[0] for b in batch])
         labels = [b[1] for b in batch]
-        data = self.tokenizer.batch_encode_plus(labels)
+        data = self.tokenizer.batch_encode(labels)
         attn_mask = data['attention_mask'][:, :-1]
         input_ids = data['input_ids'][:, :-1]
         input_ids_shifted = data['input_ids'][:, 1:]

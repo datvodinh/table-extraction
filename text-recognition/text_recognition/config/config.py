@@ -1,7 +1,7 @@
 from argparse import Namespace
 
 
-class TransformerOCRConfig:
+class SwinTransformerOCRConfig:
     # MODEL
     in_channels: int = 3
     num_workers: int = 2

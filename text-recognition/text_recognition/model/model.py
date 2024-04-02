@@ -3,7 +3,7 @@ import torch.nn as nn
 import pytorch_lightning as pl
 from einops import rearrange
 from transformers import TrOCRForCausalLM, TrOCRConfig
-from text_recognition.config import TransformerOCRConfig
+from text_recognition.config import SwinTransformerOCRConfig
 from text_recognition.tokenizer import OCRTokenizer
 from torch.optim.lr_scheduler import OneCycleLR
 from torchvision.models.swin_transformer import swin_v2_t, Swin_V2_T_Weights
@@ -19,11 +19,11 @@ class Encoder(nn.Module):
 
 
 class Decoder(nn.Module):
-    def __init__(self, config: TransformerOCRConfig) -> None:
+    def __init__(self, config: SwinTransformerOCRConfig) -> None:
         super().__init__()
         self.decoder = TrOCRForCausalLM(
             TrOCRConfig(
-                vocab_size=config.tokenizer_len,
+                vocab_size=OCRTokenizer.length,
                 d_model=config.d_model,
                 decoder_layers=config.decoder_layers,
                 decoder_attention_heads=config.decoder_attention_heads,
@@ -52,15 +52,15 @@ class Decoder(nn.Module):
 
 
 class SwinTransformerOCR(pl.LightningModule):
-    def __init__(self, config: TransformerOCRConfig) -> None:
+    def __init__(self, config: SwinTransformerOCRConfig) -> None:
         super().__init__()
         self.config = config
         self.encoder = Encoder()
         self.decoder = Decoder(config)
-        self.tokenizer = OCRTokenizer(config)
+        self.tokenizer = OCRTokenizer()
         self.criterion = nn.CrossEntropyLoss(
             label_smoothing=config.label_smoothing,
-            ignore_index=self.tokenizer.pad_token_id
+            ignore_index=self.tokenizer.pad_id
         )
 
         self.save_hyperparameters()

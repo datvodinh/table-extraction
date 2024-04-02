@@ -1,34 +1,76 @@
-from transformers import GPT2Tokenizer
-from text_recognition.config import TransformerOCRConfig
+import torch
 
 
 class OCRTokenizer:
-    def __init__(self, config: TransformerOCRConfig) -> None:
-        self._tokenizer = GPT2Tokenizer.from_pretrained('gpt2', trust_remote_code=True)
-        self._tokenizer.add_special_tokens(config.special_tokens)
+    vocab: str = 'aAàÀảẢãÃáÁạẠăĂằẰẳẲẵẴắẮặẶâÂầẦẩẨẫẪấẤậẬ\
+            bBcCdDđĐeEèÈẻẺẽẼéÉẹẸêÊềỀểỂễỄếẾệỆfFgGhHiIìÌỉỈĩĨíÍịỊ\
+                jJkKlLmMnNoOòÒỏỎõÕóÓọỌôÔồỒổỔỗỖốỐộỘơƠờỜởỞỡỠớỚợỢpPqQrRsStT\
+                    uUùÙủỦũŨúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789\
+                        !"#$%&''()*+,-./:;<=>?@[\]^_`{|}~ '
+    length: str = len(vocab)+3
+
+    def __init__(self) -> None:
+
+        self.letter_to_idx = {char: i+3 for i, char in enumerate(sorted(self.vocab))}
+        self.idx_to_letter = {i+3: char for i, char in enumerate(sorted(self.vocab))}
+        self.letter_to_idx['<sos>'] = 0
+        self.letter_to_idx['<eos>'] = 1
+        self.letter_to_idx['<pad>'] = 2
+        self.idx_to_letter[0] = '<sos>'
+        self.idx_to_letter[1] = '<eos>'
+        self.idx_to_letter[2] = '<pad>'
 
     @property
-    def pad_token_id(self):
-        return self._tokenizer.pad_token_id
+    def bos_id(self):
+        return 0
+
+    @property
+    def eos_id(self):
+        return 1
+
+    @property
+    def pad_id(self):
+        return 2
 
     def __len__(self):
-        return self._tokenizer
+        return self.length
 
     def encode(self, text: str):
-        return self._tokenizer.encode(text=text)
+        indices = [self.letter_to_idx.get(i, self.pad_id) for i in text]
+        return torch.tensor([self.letter_to_idx['<sos>']] + indices + [self.letter_to_idx['<eos>']])
 
-    def batch_encode_plus(self, labels: list[str]):
-        return self._tokenizer.batch_encode_plus(
-            labels,
-            padding=True,
-            return_tensors="pt"
+    def batch_encode(self, labels: list[str]):
+        list_indices = [
+            self.encode(label)
+            for label in labels
+        ]
+        input_ids = torch.nn.utils.rnn.pad_sequence(
+            list_indices,
+            batch_first=True,
+            padding_value=self.pad_id
         )
+        attention_mask = (input_ids != self.pad_id).float()
+        return {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask
+        }
 
     def decode(self, token_ids: list[int]):
-        return GPT2Tokenizer.decode(token_ids=token_ids)
+        chars = [self.idx_to_letter[int(i)] for i in token_ids]
+        decoded_chars = [c for c in chars if c not in ['<sos>', '<eos>', '<pad>']]
+        return "".join(decoded_chars)
 
     def batch_decode(self, sequences: list[list[int]]):
-        return GPT2Tokenizer.batch_decode(
-            sequences=sequences,
-            skip_special_tokens=True
-        )
+        return [
+            self.decode(seq)
+            for seq in sequences
+        ]
+
+
+if __name__ == "__main__":
+    tok = OCRTokenizer()
+    s = "Xin chào bạn khỏe không?"
+    enc = tok.encode(s)
+    dec = tok.decode(enc)
+    print(enc)
+    print(dec)
