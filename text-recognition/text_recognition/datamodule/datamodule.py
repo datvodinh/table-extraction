@@ -31,7 +31,7 @@ class OCRDataset(Dataset):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         with open(self.list_path[index][1], encoding="utf-8") as f:
             label = f.read()
-        return self.transform(image=img), "<|SEP|>" + label + "<|endoftext|>"
+        return self.transform(image=img), label
 
 
 class OCRDataModule(pl.LightningDataModule):

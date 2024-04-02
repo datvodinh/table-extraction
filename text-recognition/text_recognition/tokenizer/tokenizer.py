@@ -7,7 +7,7 @@ class OCRTokenizer:
                 jJkKlLmMnNoOòÒỏỎõÕóÓọỌôÔồỒổỔỗỖốỐộỘơƠờỜởỞỡỠớỚợỢpPqQrRsStT\
                     uUùÙủỦũŨúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789\
                         !"#$%&''()*+,-./:;<=>?@[\]^_`{|}~ '
-    length: str = len(vocab)+3
+    length: int = len(vocab)+3
 
     def __init__(self) -> None:
 
