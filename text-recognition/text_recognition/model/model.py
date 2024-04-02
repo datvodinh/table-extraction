@@ -92,7 +92,7 @@ class SwinTransformerOCR(pl.LightningModule):
             self.log_dict({
                 f"loss_{stage}": loss,
                 f"acc_{stage}": acc
-            })
+            }, sync_dist=True)
         return loss
 
     def training_step(self, batch: tuple, batch_idx: int):
