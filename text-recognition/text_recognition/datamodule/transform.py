@@ -5,22 +5,25 @@ import cv2
 
 
 class OCRTransform:
+    FILL_VALUE = (255, 255, 255)
+
     def __init__(self, img_size=(64, 256), stage="train") -> None:
         self.img_size = img_size
+
         if stage == "train":
             Pad_or_Rezise = A.OneOf([
                 A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1],
-                              position=A.PadIfNeeded.PositionType.RANDOM,
-                              border_mode=cv2.BORDER_CONSTANT, value=(0, 0, 0)),
+                              position=A.PadIfNeeded.PositionType.BOTTOM_LEFT,
+                              border_mode=cv2.BORDER_CONSTANT, value=self.FILL_VALUE),
                 A.Resize(height=img_size[0], width=img_size[1])
 
             ], p=1.)
             Rotate = A.OneOf([
-                A.SafeRotate(limit=5, interpolation=3, border_mode=cv2.BORDER_CONSTANT, value=(0, 0, 0), p=1)
+                A.SafeRotate(limit=5, interpolation=3, border_mode=cv2.BORDER_CONSTANT, value=self.FILL_VALUE, p=1)
             ])
             self.transform = A.Compose([
                 A.GridDistortion(distort_limit=0.1, border_mode=0, interpolation=3,
-                                 value=[0, 0, 0], p=.3),
+                                 value=self.FILL_VALUE, p=.3),
                 A.Defocus(radius=(1, 3), p=0.3),
                 A.PixelDropout(dropout_prob=0.01, drop_value=255, p=0.3),
                 A.GaussNoise(5, p=.3),
@@ -37,8 +40,8 @@ class OCRTransform:
         else:
             self.transform = A.Compose([
                 A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1],
-                              position=A.PadIfNeeded.PositionType.CENTER,
-                              border_mode=cv2.BORDER_CONSTANT, value=(0, 0, 0)),
+                              position=A.PadIfNeeded.PositionType.BOTTOM_LEFT,
+                              border_mode=cv2.BORDER_CONSTANT, value=self.FILL_VALUE),
                 A.Normalize(mean=(0., 0., 0.), std=(1., 1., 1.)),
                 ToTensorV2()
             ])
