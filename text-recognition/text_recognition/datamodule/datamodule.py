@@ -6,7 +6,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader, Dataset
 from text_recognition.config import TransformerOCRConfig
 from text_recognition.datamodule.transform import OCRTransform
-from transformers import GPT2Tokenizer
+from text_recognition.tokenizer import OCRTokenizer
 from tqdm import tqdm
 
 
@@ -45,9 +45,8 @@ class OCRDataModule(pl.LightningDataModule):
         self.in_channels = config.in_channels
         self.config = config
         self.data_dir = data_dir
+        self.tokenizer = OCRTokenizer(config)
 
-        self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2', trust_remote_code=True)
-        self.tokenizer.add_special_tokens(config.special_tokens)
         self.get_list_path()
 
     def get_list_path(self):
@@ -69,11 +68,7 @@ class OCRDataModule(pl.LightningDataModule):
     def collate_fn(self, batch):
         images = torch.stack([b[0] for b in batch])
         labels = [b[1] for b in batch]
-        data = self.tokenizer.batch_encode_plus(
-            labels,
-            padding=True,
-            return_tensors="pt"
-        )
+        data = self.tokenizer.batch_encode_plus(labels)
         attn_mask = data['attention_mask'][:, :-1]
         input_ids = data['input_ids'][:, :-1]
         input_ids_shifted = data['input_ids'][:, 1:]
@@ -94,9 +89,9 @@ class OCRDataModule(pl.LightningDataModule):
             shuffle=True,
             num_workers=self.config.num_workers,
             collate_fn=self.collate_fn,
-            pin_memory=True,
-            persistent_workers=True,
-            multiprocessing_context='fork' if torch.backends.mps.is_available() else None
+            # pin_memory=True,
+            # persistent_workers=True,
+            # multiprocessing_context='fork' if torch.backends.mps.is_available() else None
         )
 
     def val_dataloader(self) -> DataLoader:
@@ -106,7 +101,7 @@ class OCRDataModule(pl.LightningDataModule):
             shuffle=False,
             num_workers=self.config.num_workers,
             collate_fn=self.collate_fn,
-            pin_memory=True,
-            persistent_workers=True,
-            multiprocessing_context='fork' if torch.backends.mps.is_available() else None
+            # pin_memory=True,
+            # persistent_workers=True,
+            # multiprocessing_context='fork' if torch.backends.mps.is_available() else None
         )

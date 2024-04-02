@@ -4,10 +4,19 @@ from argparse import Namespace
 class TransformerOCRConfig:
     # MODEL
     in_channels: int = 3
-    embed_dim: int = 768
-    num_workers: int = 4
+    num_workers: int = 0
     num_patches: tuple[int, int] = (4, 8)
     lr: float = 0.00001
+    d_model: int = 768
+    decoder_layers: int = 6
+    decoder_attention_heads: int = 12
+    decoder_ffn_dim: int = 2688
+    # TOKENIZER
+    special_tokens: dict[str, str] = {
+        "pad_token": "<|PAD|>",
+        "sep_token": "<|SEP|>"
+    }
+    tokenizer_len: int = 50257 + len(list(special_tokens.keys()))
     # DATAMODULE
     train_ratio: float = 0.95
     img_size: tuple[int, int] = (32, 128)
@@ -17,11 +26,6 @@ class TransformerOCRConfig:
     batch_size: int = 2
     max_epochs: int = 10
     seed: int = 0
-    special_tokens: dict[str, str] = {
-        "pad_token": "<|PAD|>",
-        "sep_token": "<|SEP|>"
-    }
-    tokenizer_len: int = 50257 + len(list(special_tokens.keys()))
 
     def update(
         self,

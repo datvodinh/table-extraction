@@ -2,102 +2,67 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 from einops import rearrange
-from transformers import GPT2Model
+from transformers import TrOCRForCausalLM, TrOCRConfig
 from text_recognition.config import TransformerOCRConfig
+from text_recognition.tokenizer import OCRTokenizer
 from torch.optim.lr_scheduler import OneCycleLR
-from einops import rearrange
+from torchvision.models.swin_transformer import swin_v2_t, Swin_V2_T_Weights
 
 
-class PatchEmbedding(nn.Module):
-    def __init__(
-        self,
-        in_channels: int = 3,
-        embed_dim: int = 768,
-        num_patches: tuple[int, int] = (4, 8),
-        img_size: tuple[int, int] = (32, 256),
-    ):
+class Encoder(nn.Module):
+    def __init__(self) -> None:
         super().__init__()
-        assert (img_size[0] % num_patches[0]) == 0 and (img_size[1] % num_patches[1] == 0), \
-            'Image sizes must be divisible by num patches'
-        patch_size = tuple(img_size[i] // num_patches[i] for i in range(2))
-        total_patches = num_patches[0] * num_patches[1]
-        self.pos_embed = nn.Parameter(torch.zeros(1, total_patches, embed_dim))
-        nn.init.xavier_uniform_(self.pos_embed)
-        self.linear_embed = nn.Conv2d(
-            in_channels=in_channels,
-            out_channels=embed_dim,
-            kernel_size=patch_size,
-            stride=patch_size,
-            padding=0
-        )
+        self.encoder = swin_v2_t(weights=Swin_V2_T_Weights.IMAGENET1K_V1).features
 
-    def forward(self, x):
-        x = self.linear_embed(x)
-        x = rearrange(x, "b c h w -> b (h w) c")
-        return x + self.pos_embed
+    def forward(self, images):
+        return rearrange(self.encoder(images), "b h w c -> b (h w) c")
 
 
-class GPT2Decoder(pl.LightningModule):
-    def __init__(
-        self,
-        in_channels: int = 3,
-        embed_dim: int = 768,
-        tokenizer_len: int = 50257,
-        num_patches: tuple[int, int] = (4, 8),
-        img_size: tuple[int, int] = (32, 256)
-    ):
+class Decoder(nn.Module):
+    def __init__(self, config: TransformerOCRConfig) -> None:
         super().__init__()
-        self._patch_embed = PatchEmbedding(
-            in_channels=in_channels,
-            embed_dim=embed_dim,
-            num_patches=num_patches,
-            img_size=img_size
+        self.decoder = TrOCRForCausalLM(
+            TrOCRConfig(
+                vocab_size=config.tokenizer_len,
+                d_model=config.d_model,
+                decoder_layers=config.decoder_layers,
+                decoder_attention_heads=config.decoder_attention_heads,
+                decoder_ffn_dim=config.decoder_ffn_dim
+            )
         )
-
-        self._model = GPT2Model.from_pretrained('gpt2')
-        self.fc = nn.Linear(embed_dim, tokenizer_len)
-        self._model.resize_token_embeddings(tokenizer_len)
-
-    def _word_embed(self, x: torch.Tensor):
-        pos = torch.arange(0, x.shape[-1], dtype=torch.long, device=x.device)  # shape (t)
-        return self._model.wte(x) + self._model.wpe(pos)
-
-    def _decoder_blocks(self, x: torch.Tensor, attention_mask):
-        x = self._model.drop(x)
-        for block in self._model.h:
-            x = block(hidden_states=x, attention_mask=attention_mask)[0]
-        x = self._model.ln_f(x)
-        return self.fc(x)
+        self.decoder.resize_token_embeddings(config.tokenizer_len)
 
     def forward(
         self,
-        images: torch.Tensor,
-        labels: torch.Tensor,
-        attention_mask: torch.Tensor | None = None
+        input_ids: torch.LongTensor,
+        encoder_hidden_states: torch.FloatTensor,
+        attention_mask: torch.Tensor = None,
+        use_cache: bool = False
+
     ):
-        image_embed = self._patch_embed(images)  # B P E
-        text_embed = self._word_embed(labels)  # B S E
-        merge_inputs = torch.cat([image_embed, text_embed], dim=1)
-        img_attn_mask = torch.ones(
-            (image_embed.shape[0], image_embed.shape[1]), device=text_embed.device
+        output = self.decoder(
+            input_ids=input_ids,
+            encoder_hidden_states=encoder_hidden_states,
+            attention_mask=attention_mask,
+            use_cache=use_cache
         )
-        full_attn_mask = torch.cat([img_attn_mask, attention_mask], dim=1)
-        logits = self._decoder_blocks(merge_inputs, attention_mask=full_attn_mask)
-        return logits[:, image_embed.shape[1]:, :]
+        if use_cache:
+            return output.logits, output.past_key_values
+        else:
+            return output.logits
 
 
-class DecoderOnlyTransformerOCR(pl.LightningModule):
+class SwinTransformerOCR(pl.LightningModule):
     def __init__(self, config: TransformerOCRConfig) -> None:
         super().__init__()
         self.config = config
-        self.model = GPT2Decoder(
-            in_channels=config.in_channels,
-            embed_dim=config.embed_dim,
-            tokenizer_len=config.tokenizer_len,
-            num_patches=config.num_patches,
-            img_size=config.img_size
+        self.encoder = Encoder()
+        self.decoder = Decoder(config)
+        self.tokenizer = OCRTokenizer(config)
+        self.criterion = nn.CrossEntropyLoss(
+            label_smoothing=config.label_smoothing,
+            ignore_index=self.tokenizer.pad_token_id
         )
-        self.criterion = nn.CrossEntropyLoss(label_smoothing=config.label_smoothing)
 
         self.save_hyperparameters()
 
@@ -105,9 +70,17 @@ class DecoderOnlyTransformerOCR(pl.LightningModule):
         self,
         images: torch.Tensor,
         labels: torch.Tensor,
-        attention_mask: torch.Tensor | None = None
+        attention_mask: torch.Tensor | None = None,
+        use_cache: bool = False
     ):
-        return self.model(images, labels, attention_mask)
+        encoder_hidden_states = self.encoder(images)
+        logits = self.decoder(
+            input_ids=labels,
+            encoder_hidden_states=encoder_hidden_states,
+            attention_mask=attention_mask,
+            use_cache=use_cache
+        )
+        return logits
 
     def _forward_step(self, batch: tuple, stage: str = "train"):
         images, labels, labels_shifted, attn_mask = batch
@@ -144,3 +117,13 @@ class DecoderOnlyTransformerOCR(pl.LightningModule):
             'frequency': 1
         }
         return [optimizer], [scheduler]
+
+    @torch.no_grad()
+    def inference(self, image):
+        # TODO
+        pass
+
+    @torch.no_grad()
+    def batch_inference(self, images):
+        # TODO
+        pass

@@ -4,9 +4,10 @@ import pytorch_lightning as pl
 import os
 from pytorch_lightning.loggers import WandbLogger
 from text_recognition.config import TransformerOCRConfig
-from text_recognition.model import DecoderOnlyTransformerOCR
+from text_recognition.model import SwinTransformerOCR
 from text_recognition.datamodule import OCRDataModule
 from text_recognition.util import get_training_parser, ModelCallback
+
 
 def main():
     # PARSERs
@@ -34,7 +35,7 @@ def main():
     # DATAMODULE
     datamodule = OCRDataModule(config, data_dir=args.data_dir)
     # MODEL
-    model = DecoderOnlyTransformerOCR(config)
+    model = SwinTransformerOCR(config)
     # CALLBACK
     root_path = os.path.join(os.getcwd(), "checkpoints")
     callback = ModelCallback(root_path=root_path)
