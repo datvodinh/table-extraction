@@ -54,10 +54,12 @@ class OCRDataModule(pl.LightningDataModule):
             for name in files:
                 for ftype in [".png", ".jpg", ".jpeg"]:
                     if ftype in name:
-                        image_path = os.path.join(folder, name)
-                        label_path = os.path.join(folder, name.replace(ftype, ".txt"))
-                        if os.path.isfile(label_path):
-                            list_path.append([image_path, label_path])
+                        list_path.append(
+                            [
+                                os.path.join(folder, name),
+                                os.path.join(folder, name.replace(ftype, ".txt"))
+                            ]
+                        )
         print(f"Total Image: {len(list_path)}")
         random.shuffle(list_path)
         len_train = int(len(list_path) * self.config.train_ratio)
@@ -88,9 +90,11 @@ class OCRDataModule(pl.LightningDataModule):
             shuffle=True,
             num_workers=self.config.num_workers,
             collate_fn=self.collate_fn,
-            pin_memory=True,
-            persistent_workers=True,
-            multiprocessing_context='fork' if torch.backends.mps.is_available() else None
+            pin_memory=True if self.config.num_workers > 0 else False,
+            persistent_workers=True if self.config.num_workers > 0 else False,
+            multiprocessing_context='fork' if (
+                torch.backends.mps.is_available() and self.config.num_workers > 0
+            ) else None
         )
 
     def val_dataloader(self) -> DataLoader:
@@ -100,7 +104,9 @@ class OCRDataModule(pl.LightningDataModule):
             shuffle=False,
             num_workers=self.config.num_workers,
             collate_fn=self.collate_fn,
-            pin_memory=True,
-            persistent_workers=True,
-            multiprocessing_context='fork' if torch.backends.mps.is_available() else None
+            pin_memory=True if self.config.num_workers > 0 else False,
+            persistent_workers=True if self.config.num_workers > 0 else False,
+            multiprocessing_context='fork' if (
+                torch.backends.mps.is_available() and self.config.num_workers > 0
+            ) else None
         )

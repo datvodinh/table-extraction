@@ -19,7 +19,7 @@ class TransformerOCRConfig:
     tokenizer_len: int = 50257 + len(list(special_tokens.keys()))
     # DATAMODULE
     train_ratio: float = 0.95
-    img_size: tuple[int, int] = (32, 128)
+    img_size: tuple[int, int] = (32, 512)
     pct_start = 0.3
     label_smoothing: float = 0.1
     max_grad_norm: float = 0.5
