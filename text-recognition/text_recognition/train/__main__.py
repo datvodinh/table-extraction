@@ -14,11 +14,11 @@ def main():
     parser = get_training_parser()
     args = parser.parse_args()
 
-    # SEED
-    pl.seed_everything(args.seed, workers=True)
     # CONFIG
     config = TransformerOCRConfig()
     config.update(args)
+    # SEED
+    pl.seed_everything(config.seed, workers=True)
 
     # WANDB (OPTIONAL)
     if args.wandb is not None:

@@ -21,8 +21,8 @@ class TransformerOCRConfig:
     train_ratio: float = 0.95
     img_size: tuple[int, int] = (32, 512)
     pct_start = 0.3
-    label_smoothing: float = 0.1
-    max_grad_norm: float = 0.5
+    label_smoothing: float = 0
+    max_grad_norm: float = 1.0
     batch_size: int = 2
     max_epochs: int = 10
     seed: int = 0
