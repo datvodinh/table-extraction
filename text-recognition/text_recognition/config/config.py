@@ -4,7 +4,7 @@ from argparse import Namespace
 class TransformerOCRConfig:
     # MODEL
     in_channels: int = 3
-    num_workers: int = 0
+    num_workers: int = 2
     num_patches: tuple[int, int] = (4, 8)
     lr: float = 0.00001
     d_model: int = 768

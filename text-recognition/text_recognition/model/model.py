@@ -30,7 +30,6 @@ class Decoder(nn.Module):
                 decoder_ffn_dim=config.decoder_ffn_dim
             )
         )
-        self.decoder.resize_token_embeddings(config.tokenizer_len)
 
     def forward(
         self,
@@ -88,11 +87,12 @@ class SwinTransformerOCR(pl.LightningModule):
         labels_shifted = rearrange(labels_shifted, "b s -> (b s)")
         logits = rearrange(logits, "b s c -> (b s) c")
         loss = self.criterion(logits, labels_shifted)
-        acc = (torch.argmax(logits, dim=-1) == labels_shifted).float().mean()
-        self.log_dict({
-            f"loss_{stage}": loss,
-            f"acc_{stage}": acc
-        })
+        with torch.no_grad():
+            acc = (torch.argmax(logits, dim=-1) == labels_shifted).float().mean()
+            self.log_dict({
+                f"loss_{stage}": loss,
+                f"acc_{stage}": acc
+            })
         return loss
 
     def training_step(self, batch: tuple, batch_idx: int):

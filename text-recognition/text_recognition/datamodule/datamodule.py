@@ -7,7 +7,6 @@ from torch.utils.data import DataLoader, Dataset
 from text_recognition.config import TransformerOCRConfig
 from text_recognition.datamodule.transform import OCRTransform
 from text_recognition.tokenizer import OCRTokenizer
-from tqdm import tqdm
 
 
 class OCRDataset(Dataset):
@@ -51,8 +50,8 @@ class OCRDataModule(pl.LightningDataModule):
 
     def get_list_path(self):
         list_path = []
-        for folder, _, files in tqdm(os.walk(self.data_dir)):
-            for name in tqdm(files):
+        for folder, _, files in os.walk(self.data_dir):
+            for name in files:
                 for ftype in [".png", ".jpg", ".jpeg"]:
                     if ftype in name:
                         image_path = os.path.join(folder, name)
@@ -89,9 +88,9 @@ class OCRDataModule(pl.LightningDataModule):
             shuffle=True,
             num_workers=self.config.num_workers,
             collate_fn=self.collate_fn,
-            # pin_memory=True,
-            # persistent_workers=True,
-            # multiprocessing_context='fork' if torch.backends.mps.is_available() else None
+            pin_memory=True,
+            persistent_workers=True,
+            multiprocessing_context='fork' if torch.backends.mps.is_available() else None
         )
 
     def val_dataloader(self) -> DataLoader:
@@ -101,7 +100,7 @@ class OCRDataModule(pl.LightningDataModule):
             shuffle=False,
             num_workers=self.config.num_workers,
             collate_fn=self.collate_fn,
-            # pin_memory=True,
-            # persistent_workers=True,
-            # multiprocessing_context='fork' if torch.backends.mps.is_available() else None
+            pin_memory=True,
+            persistent_workers=True,
+            multiprocessing_context='fork' if torch.backends.mps.is_available() else None
         )
