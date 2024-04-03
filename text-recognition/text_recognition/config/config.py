@@ -11,12 +11,8 @@ class SwinTransformerOCRConfig:
     decoder_layers: int = 6
     decoder_attention_heads: int = 12
     decoder_ffn_dim: int = 2688
-    # TOKENIZER
-    special_tokens: dict[str, str] = {
-        "pad_token": "<|PAD|>",
-        "sep_token": "<|SEP|>"
-    }
-    tokenizer_len: int = 50257 + len(list(special_tokens.keys()))
+    # INFERENCE
+    max_tokens: int = 128
     # DATAMODULE
     train_ratio: float = 0.95
     img_size: tuple[int, int] = (32, 512)

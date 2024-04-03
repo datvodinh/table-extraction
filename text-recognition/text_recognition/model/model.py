@@ -5,7 +5,7 @@ from einops import rearrange
 from transformers import TrOCRForCausalLM, TrOCRConfig
 from text_recognition.config import SwinTransformerOCRConfig
 from text_recognition.tokenizer import OCRTokenizer
-from torch.optim.lr_scheduler import OneCycleLR
+# from torch.optim.lr_scheduler import OneCycleLR
 from torchvision.models.swin_transformer import swin_v2_t, Swin_V2_T_Weights
 
 
@@ -36,6 +36,7 @@ class Decoder(nn.Module):
         input_ids: torch.LongTensor,
         encoder_hidden_states: torch.FloatTensor,
         attention_mask: torch.Tensor = None,
+        past_key_values: torch.FloatTensor = None,
         use_cache: bool = False
 
     ):
@@ -43,6 +44,7 @@ class Decoder(nn.Module):
             input_ids=input_ids,
             encoder_hidden_states=encoder_hidden_states,
             attention_mask=attention_mask,
+            past_key_values=past_key_values,
             use_cache=use_cache
         )
         if use_cache:
@@ -70,16 +72,17 @@ class SwinTransformerOCR(pl.LightningModule):
         images: torch.Tensor,
         labels: torch.Tensor,
         attention_mask: torch.Tensor | None = None,
+        past_key_values: torch.FloatTensor = None,
         use_cache: bool = False
     ):
         encoder_hidden_states = self.encoder(images)
-        logits = self.decoder(
+        return self.decoder(
             input_ids=labels,
             encoder_hidden_states=encoder_hidden_states,
             attention_mask=attention_mask,
+            past_key_values=past_key_values,
             use_cache=use_cache
         )
-        return logits
 
     def _forward_step(self, batch: tuple, stage: str = "train"):
         images, labels, labels_shifted, attn_mask = batch
@@ -119,11 +122,31 @@ class SwinTransformerOCR(pl.LightningModule):
         return [optimizer]  # , [scheduler]
 
     @torch.no_grad()
-    def inference(self, image):
-        # TODO
-        pass
+    def batch_inference(self, images: torch.FloatTensor):
+        n_samples = images.shape[0]
+        check_eos = torch.zeros(n_samples)
+        labels = torch.zeros(n_samples, 1).long()  # <sos>
+        list_inference = [[] for _ in range(n_samples)]
+        token_count = 0
+        encoder_hidden_states = self.encoder(images)
+        past_key_values = None
+        while (check_eos.sum().item() < n_samples) and (token_count < self.config.max_tokens):
+            token_count += 1
+            logits, past_key_values = self.decoder(
+                input_ids=labels,
+                encoder_hidden_states=encoder_hidden_states,
+                past_key_values=past_key_values,
+                use_cache=True
+            )
+            labels = torch.argmax(logits, dim=-1, keepdim=True)
+            for i in range(n_samples):
+                token = labels[i][0].item()
+                if token == 1:  # <eos>
+                    check_eos[i] = 1
+                elif (token != 1) and (check_eos[i] != 1):
+                    list_inference[i].append(token)
 
-    @torch.no_grad()
-    def batch_inference(self, images):
-        # TODO
-        pass
+        return {
+            "output": self.tokenizer.batch_decode(list_inference),
+            "output_ids": list_inference
+        }
