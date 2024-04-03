@@ -1,4 +1,3 @@
-import torch
 import wandb
 import pytorch_lightning as pl
 import os

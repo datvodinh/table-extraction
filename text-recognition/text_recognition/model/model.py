@@ -106,17 +106,17 @@ class SwinTransformerOCR(pl.LightningModule):
             params=self.parameters(),
             lr=self.config.lr,
         )
-        scheduler = {
-            'scheduler': OneCycleLR(
-                optimizer=optimizer,
-                max_lr=self.config.lr,
-                total_steps=self.trainer.estimated_stepping_batches,
-                pct_start=self.config.pct_start
-            ),
-            'interval': 'step',
-            'frequency': 1
-        }
-        return [optimizer], [scheduler]
+        # scheduler = {
+        #     'scheduler': OneCycleLR(
+        #         optimizer=optimizer,
+        #         max_lr=self.config.lr,
+        #         total_steps=self.trainer.estimated_stepping_batches,
+        #         pct_start=self.config.pct_start
+        #     ),
+        #     'interval': 'step',
+        #     'frequency': 1
+        # }
+        return [optimizer]  # , [scheduler]
 
     @torch.no_grad()
     def inference(self, image):
