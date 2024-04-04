@@ -8,6 +8,9 @@ class OCRTokenizer:
                     uUùÙủỦũŨúÚụỤưƯừỪửỬữỮứỨựỰvVwWxXyYỳỲỷỶỹỸýÝỵỴzZ0123456789\
                         !"#$%&''()*+,-./:;<=>?@[\]^_`{|}~ '
     length: int = len(vocab)+3
+    bos_id: int = 0
+    eos_id: int = 1
+    pad_id: int = 2
 
     def __init__(self) -> None:
 
@@ -19,18 +22,6 @@ class OCRTokenizer:
         self.idx_to_letter[0] = '<sos>'
         self.idx_to_letter[1] = '<eos>'
         self.idx_to_letter[2] = '<pad>'
-
-    @property
-    def bos_id(self):
-        return 0
-
-    @property
-    def eos_id(self):
-        return 1
-
-    @property
-    def pad_id(self):
-        return 2
 
     def __len__(self):
         return self.length

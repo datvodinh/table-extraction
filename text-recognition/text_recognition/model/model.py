@@ -27,7 +27,11 @@ class Decoder(nn.Module):
                 d_model=config.d_model,
                 decoder_layers=config.decoder_layers,
                 decoder_attention_heads=config.decoder_attention_heads,
-                decoder_ffn_dim=config.decoder_ffn_dim
+                decoder_ffn_dim=config.decoder_ffn_dim,
+                decoder_start_token_id=OCRTokenizer.bos_id,
+                pad_token_id=OCRTokenizer.pad_id,
+                bos_token_id=OCRTokenizer.bos_id,
+                eos_token_id=OCRTokenizer.eos_id
             )
         )
 
