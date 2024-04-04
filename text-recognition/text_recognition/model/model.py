@@ -5,7 +5,7 @@ from einops import rearrange
 from transformers import TrOCRForCausalLM, TrOCRConfig
 from text_recognition.config import SwinTransformerOCRConfig
 from text_recognition.tokenizer import OCRTokenizer
-# from torch.optim.lr_scheduler import OneCycleLR
+from torch.optim.lr_scheduler import OneCycleLR
 from torchvision.models.swin_transformer import swin_v2_t, Swin_V2_T_Weights
 
 
@@ -28,7 +28,9 @@ class Decoder(nn.Module):
                 decoder_layers=config.decoder_layers,
                 decoder_attention_heads=config.decoder_attention_heads,
                 decoder_ffn_dim=config.decoder_ffn_dim,
+                dropout=config.dropout,
                 decoder_start_token_id=OCRTokenizer.bos_id,
+                scale_embedding=config.scale_embedding,
                 pad_token_id=OCRTokenizer.pad_id,
                 bos_token_id=OCRTokenizer.bos_id,
                 eos_token_id=OCRTokenizer.eos_id
@@ -113,17 +115,17 @@ class SwinTransformerOCR(pl.LightningModule):
             params=self.parameters(),
             lr=self.config.lr,
         )
-        # scheduler = {
-        #     'scheduler': OneCycleLR(
-        #         optimizer=optimizer,
-        #         max_lr=self.config.lr,
-        #         total_steps=self.trainer.estimated_stepping_batches,
-        #         pct_start=self.config.pct_start
-        #     ),
-        #     'interval': 'step',
-        #     'frequency': 1
-        # }
-        return [optimizer]  # , [scheduler]
+        scheduler = {
+            'scheduler': OneCycleLR(
+                optimizer=optimizer,
+                max_lr=self.config.lr,
+                total_steps=self.trainer.estimated_stepping_batches,
+                pct_start=self.config.pct_start
+            ),
+            'interval': 'step',
+            'frequency': 1
+        }
+        return [optimizer], [scheduler]
 
     @torch.no_grad()
     def batch_inference(self, images: torch.FloatTensor):
