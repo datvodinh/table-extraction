@@ -6,19 +6,40 @@ from transformers import TrOCRForCausalLM, TrOCRConfig
 from text_recognition.config import SwinTransformerOCRConfig
 from text_recognition.tokenizer import OCRTokenizer
 from torch.optim.lr_scheduler import OneCycleLR
-from torchvision.models.swin_transformer import swin_v2_t, Swin_V2_T_Weights
+from torchvision.models.swin_transformer import (
+    SwinTransformer,
+    SwinTransformerBlockV2,
+    PatchMergingV2
+)
 
 
-class Encoder(nn.Module):
-    def __init__(self) -> None:
+class SwinTransformerEncoder(nn.Module):
+    def __init__(self, config: SwinTransformerOCRConfig):
         super().__init__()
-        self.encoder = swin_v2_t(weights=Swin_V2_T_Weights.IMAGENET1K_V1).features
+        self.model = SwinTransformer(
+            patch_size=config.patch_size,
+            embed_dim=config.embed_dim,
+            depths=config.depths,
+            num_heads=config.num_heads,
+            window_size=config.window_size,
+            dropout=config.dropout,
+            block=SwinTransformerBlockV2,
+            downsample_layer=PatchMergingV2
+        )
 
-    def forward(self, images):
-        return rearrange(self.encoder(images), "b h w c -> b (h w) c")
+        # Avoid unused params in DDP
+        self.model.permute = None
+        self.model.avgpool = None
+        self.model.flatten = None
+        self.model.head = None
+
+    def forward(self, x):
+        x = self.model.features(x)  # B H W C
+        x = self.model.norm(x)     # B H W C
+        return rearrange(x, "b h w c -> b (h w) c")
 
 
-class Decoder(nn.Module):
+class TrOCRDecoder(nn.Module):
     def __init__(self, config: SwinTransformerOCRConfig) -> None:
         super().__init__()
         self.decoder = TrOCRForCausalLM(
@@ -63,8 +84,8 @@ class SwinTransformerOCR(pl.LightningModule):
     def __init__(self, config: SwinTransformerOCRConfig) -> None:
         super().__init__()
         self.config = config
-        self.encoder = Encoder()
-        self.decoder = Decoder(config)
+        self.encoder = SwinTransformerEncoder(config)
+        self.decoder = TrOCRDecoder(config)
         self.tokenizer = OCRTokenizer()
         self.criterion = nn.CrossEntropyLoss(
             label_smoothing=config.label_smoothing,
@@ -128,7 +149,7 @@ class SwinTransformerOCR(pl.LightningModule):
         return [optimizer], [scheduler]
 
     @torch.no_grad()
-    def batch_inference(self, images: torch.FloatTensor):
+    def predict(self, images: torch.FloatTensor):
         n_samples = images.shape[0]
         check_eos = torch.zeros(n_samples)
         labels = torch.zeros(n_samples, 1).long()  # <sos>

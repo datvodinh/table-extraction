@@ -48,7 +48,8 @@ def main():
         enable_progress_bar=args.pbar,
         deterministic=False,
         precision=args.precision,
-        strategy="auto"
+        strategy="auto",
+        use_distributed_sampler=False
     )
     # FIT MODEL
     trainer.fit(model=model, datamodule=datamodule)
