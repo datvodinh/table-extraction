@@ -17,6 +17,7 @@ opencv-python = "^4.9.0.80"
 transformers = "^4.39.2"
 sentencepiece = "^0.2.0"
 tokenizers = "^0.15.2"
+imagesize = "^1.4.1"
 
 
 [build-system]
