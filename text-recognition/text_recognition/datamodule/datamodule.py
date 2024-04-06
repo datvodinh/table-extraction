@@ -82,10 +82,11 @@ class OCRImageClusterSampler(BatchSampler):
         list_key = list(self.dataset.ratio_cluster.keys())
         if self.shuffle:
             random.shuffle(list_key)
+        remain_indice = []
+        remain_max_ratio = 0
         for k in list_key:
             list_path = self.dataset.ratio_cluster[k]
-            remain_indice = []
-            remain_max_ratio = 0
+
             if self.shuffle:
                 random.shuffle(list_path)
             list_label = [lp[1] for lp in list_path]
@@ -98,12 +99,12 @@ class OCRImageClusterSampler(BatchSampler):
                     ]
                 else:
                     if remain_max_ratio < int(k):
-                        remain_max_ratio = k
+                        remain_max_ratio = int(k)
                     remain_indice += list_label[start:end]
 
         for i in range(0, len(remain_indice), self.batch_size):
             yield [
-                (int(self.dataset.list_path_index[label]), int(k))
+                (int(self.dataset.list_path_index[label]), int(remain_max_ratio))
                 for label in remain_indice[i:i + self.batch_size]
             ]
 
