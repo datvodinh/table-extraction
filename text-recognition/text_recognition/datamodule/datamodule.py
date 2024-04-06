@@ -54,8 +54,11 @@ class OCRDataset(Dataset):
     def __len__(self):
         return len(self.list_path)
 
-    def __getitem__(self, index):
-        idx, ratio = index
+    def __getitem__(self, info):
+        if isinstance(info, int):
+            idx = info
+        else:
+            idx, ratio = info
         img = cv2.imread(self.list_path[idx][0])
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         with open(self.list_path[idx][1], encoding="utf-8") as f:
@@ -75,21 +78,34 @@ class OCRImageClusterSampler(BatchSampler):
         self.batch_size = batch_size
         self.shuffle = shuffle
 
-    def __len__(self):
-        return len(self.dataset)
-
     def __iter__(self):
         list_key = list(self.dataset.ratio_cluster.keys())
         if self.shuffle:
             random.shuffle(list_key)
         for k in list_key:
             list_path = self.dataset.ratio_cluster[k]
+            remain_indice = []
+            remain_max_ratio = 0
             if self.shuffle:
                 random.shuffle(list_path)
             list_label = [lp[1] for lp in list_path]
             for i in range(0, len(list_path), self.batch_size):
                 start, end = i, min(i + self.batch_size, len(list_path))
-                yield [(int(self.dataset.list_path_index[label]), int(k)) for label in list_label[start:end]]
+                if end == i+self.batch_size:
+                    yield [
+                        (int(self.dataset.list_path_index[label]), int(k))
+                        for label in list_label[start:end]
+                    ]
+                else:
+                    if remain_max_ratio < int(k):
+                        remain_max_ratio = k
+                    remain_indice += list_label[start:end]
+
+        for i in range(0, len(remain_indice), self.batch_size):
+            yield [
+                (int(self.dataset.list_path_index[label]), int(k))
+                for label in remain_indice[i:i + self.batch_size]
+            ]
 
 
 class Collator:

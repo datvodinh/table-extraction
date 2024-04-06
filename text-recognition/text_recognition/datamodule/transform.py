@@ -18,17 +18,11 @@ class OCRTransform:
                 A.GaussNoise(5, p=.3),
                 A.RandomBrightnessContrast(.1, .2, True, p=0.3),
                 A.ImageCompression(95, p=.3),
-                A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1],
-                              position=A.PadIfNeeded.PositionType.BOTTOM_LEFT,
-                              border_mode=cv2.BORDER_CONSTANT, value=self.FILL_VALUE),
                 A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
                 ToTensorV2()
             ])
         else:
             self.transform = A.Compose([
-                A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1],
-                              position=A.PadIfNeeded.PositionType.BOTTOM_LEFT,
-                              border_mode=cv2.BORDER_CONSTANT, value=self.FILL_VALUE),
                 A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
                 ToTensorV2()
             ])
