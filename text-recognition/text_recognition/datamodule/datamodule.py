@@ -89,7 +89,7 @@ class OCRImageClusterSampler(BatchSampler):
             list_label = [lp[1] for lp in list_path]
             for i in range(0, len(list_path), self.batch_size):
                 start, end = i, min(i + self.batch_size, len(list_path))
-                yield ((int(self.dataset.list_path_index[label]), int(k)) for label in list_label[start:end])
+                yield [(int(self.dataset.list_path_index[label]), int(k)) for label in list_label[start:end]]
 
 
 class Collator:
