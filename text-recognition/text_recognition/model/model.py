@@ -114,8 +114,9 @@ class SwinTransformerOCR(pl.LightningModule):
     def _forward_step(self, batch: tuple, stage: str = "train"):
         images, labels, labels_shifted, attn_mask = batch
         logits = self.forward(images, labels, attn_mask)
-        labels_shifted = rearrange(labels_shifted, "b s -> (b s)")
-        logits = rearrange(logits, "b s c -> (b s) c")
+        attn_mask = rearrange(attn_mask, "b s -> (b s)")
+        labels_shifted = rearrange(labels_shifted, "b s -> (b s)")[attn_mask == 1]
+        logits = rearrange(logits, "b s c -> (b s) c")[attn_mask == 1]
         loss = self.criterion(logits, labels_shifted)
         with torch.no_grad():
             acc = (torch.argmax(logits, dim=-1) == labels_shifted).float().mean()
@@ -135,6 +136,8 @@ class SwinTransformerOCR(pl.LightningModule):
         optimizer = torch.optim.AdamW(
             params=self.parameters(),
             lr=self.config.lr,
+            betas=self.config.betas,
+            eps=self.config.eps
         )
         scheduler = {
             'scheduler': OneCycleLR(

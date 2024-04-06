@@ -8,6 +8,8 @@ class SwinTransformerOCRConfig:
     in_channels: int = 3
     num_workers: int = 2
     lr: float = 0.00001
+    betas: tuple[float] = (0.9, 0.98)
+    eps: float = 1e-09
     # ENCODER
     patch_size: tuple[int] = (4, 4)
     embed_dim: int = 96
@@ -24,7 +26,7 @@ class SwinTransformerOCRConfig:
     # INFERENCE
     max_tokens: int = 128
     # DATAMODULE
-    train_ratio: float = 0.95
+    train_ratio: float = 0.99
     img_size: tuple[int] = (32, 512)
     pct_start = 0.3
     label_smoothing: float = 0.1

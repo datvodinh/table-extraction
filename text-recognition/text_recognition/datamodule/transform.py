@@ -18,12 +18,16 @@ class OCRTransform:
                 A.GaussNoise(5, p=.3),
                 A.RandomBrightnessContrast(.1, .2, True, p=0.3),
                 A.ImageCompression(95, p=.3),
-                A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+                A.InvertImg(),
+                A.ToGray(),
+                A.Normalize(mean=(0., 0., 0.), std=(1., 1., 1.)),
                 ToTensorV2()
             ])
         else:
             self.transform = A.Compose([
-                A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+                A.InvertImg(),
+                A.ToGray(),
+                A.Normalize(mean=(0., 0., 0.), std=(1., 1., 1.)),
                 ToTensorV2()
             ])
 
