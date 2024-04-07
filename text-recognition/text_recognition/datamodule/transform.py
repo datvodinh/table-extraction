@@ -33,5 +33,5 @@ class OCRTransform:
 
     def __call__(self, image, ratio):
         height, width, _ = image.shape
-        image = cv2.resize(image, (self.img_size[0] * ratio, self.img_size[0]))
+        image = cv2.resize(image, (round(self.img_size[0] * ratio), self.img_size[0]))
         return self.transform(image=image)['image']

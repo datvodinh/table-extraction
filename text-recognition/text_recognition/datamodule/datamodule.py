@@ -11,7 +11,6 @@ from text_recognition.config import SwinTransformerOCRConfig
 from text_recognition.datamodule.transform import OCRTransform
 from text_recognition.tokenizer import OCRTokenizer
 from concurrent.futures import ThreadPoolExecutor
-from tqdm import tqdm
 
 
 class OCRDataset(Dataset):
@@ -37,13 +36,13 @@ class OCRDataset(Dataset):
 
         def process_file(f):
             w, h = imagesize.get(f[0])
-            r = max(round(w/h), 1)
-            r = min(r, max_ratio)
-            return str(int(r)), f
-
-        with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()*2) as executor:
-            results = list(tqdm(executor.map(process_file, self.list_path),
-                           total=len(self.list_path), desc="Getting image clusters"))
+            r = max(round(w/h*2), 1)
+            r = min(r/2, max_ratio)
+            return str(r), f
+        print("Getting image clusters!")
+        cpu_count = multiprocessing.cpu_count()
+        with ThreadPoolExecutor(max_workers=cpu_count*5 if cpu_count < 10 else cpu_count*2) as executor:
+            results = list(executor.map(process_file, self.list_path))
 
         for r, f in results:
             if r not in self.ratio_cluster.keys():
@@ -82,31 +81,35 @@ class OCRImageClusterSampler(BatchSampler):
         list_key = list(self.dataset.ratio_cluster.keys())
         if self.shuffle:
             random.shuffle(list_key)
-        remain_indice = []
+        list_batch_indices = []
+        remain_indices = []
         remain_max_ratio = 0
         for k in list_key:
             list_path = self.dataset.ratio_cluster[k]
-
             if self.shuffle:
                 random.shuffle(list_path)
             list_label = [lp[1] for lp in list_path]
             for i in range(0, len(list_path), self.batch_size):
                 start, end = i, min(i + self.batch_size, len(list_path))
                 if end == i+self.batch_size:
-                    yield [
-                        (int(self.dataset.list_path_index[label]), int(k))
+                    list_batch_indices.append([
+                        (int(self.dataset.list_path_index[label]), float(k))
                         for label in list_label[start:end]
-                    ]
+                    ])
                 else:
-                    if remain_max_ratio < int(k):
-                        remain_max_ratio = int(k)
-                    remain_indice += list_label[start:end]
-
-        for i in range(0, len(remain_indice), self.batch_size):
-            yield [
+                    if remain_max_ratio < float(k):
+                        remain_max_ratio = float(k)
+                    remain_indices += list_label[start:end]
+        for i in range(0, len(remain_indices), self.batch_size):
+            list_batch_indices.append([
                 (int(self.dataset.list_path_index[label]), int(remain_max_ratio))
-                for label in remain_indice[i:i + self.batch_size]
-            ]
+                for label in remain_indices[i:i + self.batch_size]
+            ])
+
+        if self.shuffle:
+            random.shuffle(list_batch_indices)
+        for batch_indices in list_batch_indices:
+            yield batch_indices
 
 
 class Collator:
