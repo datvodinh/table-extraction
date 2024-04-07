@@ -49,6 +49,8 @@ class OCRDataset(Dataset):
                 self.ratio_cluster[r] = [f]
             else:
                 self.ratio_cluster[r].append(f)
+        for k in self.ratio_cluster.keys():
+            print(k, len(self.ratio_cluster[k]))
 
     def __len__(self):
         return len(self.list_path)
@@ -60,8 +62,7 @@ class OCRDataset(Dataset):
             idx, ratio = info
         img = cv2.imread(self.list_path[idx][0])
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        with open(self.list_path[idx][1], encoding="utf-8") as f:
-            label = f.read()
+        label = self.list_path[idx][1]
         return self.transform(image=img, ratio=ratio), label
 
 
@@ -137,25 +138,30 @@ class OCRDataModule(pl.LightningDataModule):
         self.config = config
         self.data_dir = data_dir
 
-        self.get_list_path()
+        self._get_list_path()
 
-    def get_list_path(self):
-        list_path = []
+    def _get_list_path(self):
+        list_data = []
         for folder, _, files in os.walk(self.data_dir):
-            for name in files:
-                for ftype in [".png", ".jpg", ".jpeg"]:
-                    if ftype in name:
-                        list_path.append(
-                            [
-                                os.path.join(folder, name),
-                                os.path.join(folder, name.replace(ftype, ".txt"))
-                            ]
-                        )
-        print(f"Total Image: {len(list_path)}")
-        random.shuffle(list_path)
-        len_train = int(len(list_path) * self.config.train_ratio)
-        self.train_list = list_path[:len_train]
-        self.val_list = list_path[len_train:]
+            label_file = os.path.join(folder, "labels.txt")
+            if os.path.exists(label_file):
+                with open(label_file, "r", encoding="utf-8") as f:
+                    data = f.read().strip().split("\n")
+                for d in data:
+                    split_index = d.find('.jpg')
+                    image_file = d[:split_index+4].strip()
+                    label = d[split_index + 5:].strip()
+                    list_data.append(
+                        [
+                            os.path.join(folder, image_file),
+                            label
+                        ]
+                    )
+        print(f"Total Image: {len(list_data)}")
+        random.shuffle(list_data)
+        len_train = int(len(list_data) * self.config.train_ratio)
+        self.train_list = list_data[:len_train]
+        self.val_list = list_data[len_train:]
 
     def setup(self, stage: str = "train"):
         self.OCR_train = OCRDataset(

@@ -11,23 +11,21 @@ class OCRTransform:
 
         if stage == "train":
             self.transform = A.Compose([
+                A.ShiftScaleRotate(shift_limit=0, scale_limit=(0., 0.15), rotate_limit=1,
+                                   border_mode=0, interpolation=3, value=[255, 255, 255], p=0.7),
                 A.GridDistortion(distort_limit=0.1, border_mode=0, interpolation=3,
-                                 value=self.FILL_VALUE, p=.3),
-                A.Defocus(radius=(1, 3), p=0.3),
-                A.PixelDropout(dropout_prob=0.01, drop_value=255, p=0.3),
-                A.GaussNoise(5, p=.3),
-                A.RandomBrightnessContrast(.1, .2, True, p=0.3),
+                                 value=[255, 255, 255], p=.5),
+                A.GaussNoise(10, p=.2),
+                A.RandomBrightnessContrast(.05, (-.2, 0), True, p=0.2),
                 A.ImageCompression(95, p=.3),
-                A.InvertImg(),
-                A.ToGray(),
-                A.Normalize(mean=(0., 0., 0.), std=(1., 1., 1.)),
+                A.ToGray(always_apply=True),
+                A.Normalize(),
                 ToTensorV2()
             ])
         else:
             self.transform = A.Compose([
-                A.InvertImg(),
-                A.ToGray(),
-                A.Normalize(mean=(0., 0., 0.), std=(1., 1., 1.)),
+                A.ToGray(always_apply=True),
+                A.Normalize(),
                 ToTensorV2()
             ])
 

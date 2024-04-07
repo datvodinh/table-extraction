@@ -27,7 +27,7 @@ class SwinTransformerOCRConfig:
     max_tokens: int = 128
     # DATAMODULE
     train_ratio: float = 0.99
-    img_size: tuple[int] = (32, 512)
+    img_size: tuple[int] = (32, 256)
     pct_start = 0.3
     label_smoothing: float = 0.1
     max_grad_norm: float = 1.0
