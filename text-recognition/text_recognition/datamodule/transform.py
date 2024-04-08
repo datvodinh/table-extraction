@@ -4,8 +4,6 @@ import cv2
 
 
 class OCRTransform:
-    FILL_VALUE = (255, 255, 255)
-
     def __init__(self, img_size=(64, 256), stage="train") -> None:
         self.img_size = img_size
 
@@ -30,6 +28,5 @@ class OCRTransform:
             ])
 
     def __call__(self, image, ratio):
-        height, width, _ = image.shape
         image = cv2.resize(image, (round(self.img_size[0] * ratio), self.img_size[0]))
         return self.transform(image=image)['image']

@@ -14,13 +14,13 @@ class SwinTransformerOCRConfig:
     patch_size: tuple[int] = (4, 4)
     embed_dim: int = 96
     window_size: tuple[int] = (8, 8)
-    depths: tuple[int] = (2, 6, 2)
+    depths: tuple[int] = (2, 18, 2)
     num_heads: tuple[int] = (6, 12, 24)
     # DECODER
     d_model: int = 384
-    decoder_layers: int = 6
+    decoder_layers: int = 12
     decoder_attention_heads: int = 6
-    decoder_ffn_dim: int = 2048
+    decoder_ffn_dim: int = 1536
     scale_embedding: bool = True
     dropout: float = 0.1
     # INFERENCE
@@ -30,7 +30,7 @@ class SwinTransformerOCRConfig:
     img_size: tuple[int] = (32, 256)
     pct_start = 0.3
     label_smoothing: float = 0.1
-    max_grad_norm: float = 1.0
+    max_grad_norm: float = 0.5
     batch_size: int = 2
     max_epochs: int = 10
     seed: int = 0

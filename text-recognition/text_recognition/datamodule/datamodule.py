@@ -49,8 +49,8 @@ class OCRDataset(Dataset):
                 self.ratio_cluster[r] = [f]
             else:
                 self.ratio_cluster[r].append(f)
-        for k in self.ratio_cluster.keys():
-            print(k, len(self.ratio_cluster[k]))
+        # for k in self.ratio_cluster.keys():
+        #     print(k, len(self.ratio_cluster[k]))
 
     def __len__(self):
         return len(self.list_path)
