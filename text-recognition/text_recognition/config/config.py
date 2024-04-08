@@ -14,15 +14,17 @@ class SwinTransformerOCRConfig:
     patch_size: tuple[int] = (4, 4)
     embed_dim: int = 96
     window_size: tuple[int] = (8, 8)
-    depths: tuple[int] = (2, 18, 2)
+    depths: tuple[int] = (2, 12, 2)
     num_heads: tuple[int] = (6, 12, 24)
     # DECODER
     d_model: int = 384
-    decoder_layers: int = 12
+    decoder_layers: int = 8
     decoder_attention_heads: int = 6
     decoder_ffn_dim: int = 1536
     scale_embedding: bool = True
-    dropout: float = 0.1
+    dropout: float = 0.
+    use_learned_position_embeddings: bool = False
+    activation_function: str = "silu"
     # INFERENCE
     max_tokens: int = 128
     # DATAMODULE

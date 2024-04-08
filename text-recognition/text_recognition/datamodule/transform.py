@@ -16,17 +16,24 @@ class OCRTransform:
                 A.GaussNoise(10, p=.2),
                 A.RandomBrightnessContrast(.05, (-.2, 0), True, p=0.2),
                 A.ImageCompression(95, p=.3),
+                A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1],
+                              position=A.PadIfNeeded.PositionType.TOP_LEFT,
+                              border_mode=cv2.BORDER_CONSTANT, value=[255, 255, 255]),
                 A.ToGray(always_apply=True),
                 A.Normalize(),
                 ToTensorV2()
             ])
         else:
             self.transform = A.Compose([
+                A.PadIfNeeded(min_height=img_size[0], min_width=img_size[1],
+                              position=A.PadIfNeeded.PositionType.TOP_LEFT,
+                              border_mode=cv2.BORDER_CONSTANT, value=[255, 255, 255]),
                 A.ToGray(always_apply=True),
                 A.Normalize(),
                 ToTensorV2()
             ])
 
-    def __call__(self, image, ratio):
-        image = cv2.resize(image, (round(self.img_size[0] * ratio), self.img_size[0]))
+    def __call__(self, image):
+        height, width, _ = image.shape
+        image = cv2.resize(image, (min(self.img_size[1], int(self.img_size[0]/height*width)), self.img_size[0]))
         return self.transform(image=image)['image']

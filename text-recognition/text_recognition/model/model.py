@@ -50,8 +50,10 @@ class TrOCRDecoder(nn.Module):
                 decoder_attention_heads=config.decoder_attention_heads,
                 decoder_ffn_dim=config.decoder_ffn_dim,
                 dropout=config.dropout,
+                activation_function=config.activation_function,
                 decoder_start_token_id=OCRTokenizer.bos_id,
                 scale_embedding=config.scale_embedding,
+                use_learned_position_embeddings=config.use_learned_position_embeddings,
                 pad_token_id=OCRTokenizer.pad_id,
                 bos_token_id=OCRTokenizer.bos_id,
                 eos_token_id=OCRTokenizer.eos_id
@@ -112,11 +114,11 @@ class SwinTransformerOCR(pl.LightningModule):
         )
 
     def _forward_step(self, batch: tuple, stage: str = "train"):
-        images, labels, labels_shifted, attn_mask = batch
-        logits = self.forward(images, labels, attn_mask)
-        attn_mask = rearrange(attn_mask, "b s -> (b s)")
-        labels_shifted = rearrange(labels_shifted, "b s -> (b s)")[attn_mask == 1]
-        logits = rearrange(logits, "b s c -> (b s) c")[attn_mask == 1]
+        images, labels, labels_shifted, attn_mask_in, attn_mask_out = batch
+        logits = self.forward(images, labels, attn_mask_in)
+        pad_mask = rearrange(attn_mask_out, "b s -> (b s)")
+        labels_shifted = rearrange(labels_shifted, "b s -> (b s)")[pad_mask == 1]
+        logits = rearrange(logits, "b s c -> (b s) c")[pad_mask == 1]
         loss = self.criterion(logits, labels_shifted)
         with torch.no_grad():
             acc = (torch.argmax(logits, dim=-1) == labels_shifted).float().mean()
