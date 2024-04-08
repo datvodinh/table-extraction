@@ -18,7 +18,7 @@ class SwinTransformerOCRConfig:
     num_heads: tuple[int] = (6, 12, 24)
     # DECODER
     d_model: int = 384
-    decoder_layers: int = 8
+    decoder_layers: int = 6
     decoder_attention_heads: int = 6
     decoder_ffn_dim: int = 1536
     scale_embedding: bool = True
