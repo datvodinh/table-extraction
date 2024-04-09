@@ -34,7 +34,7 @@ class SwinTransformerOCRConfig:
     train_ratio: float = 0.99
     img_size: tuple[int] = (64, 256)
     pct_start = 0.1
-    label_smoothing: float = 0.1
+    label_smoothing: float = 0
     max_grad_norm: float = 0.5
     batch_size: int = 32
     max_batch_size: int = 256
