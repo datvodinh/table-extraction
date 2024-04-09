@@ -21,16 +21,16 @@ class SwinTransformerOCRConfig:
     decoder_layers: int = 6
     decoder_attention_heads: int = 6
     decoder_ffn_dim: int = 1536
-    scale_embedding: bool = True
-    dropout: float = 0.
-    use_learned_position_embeddings: bool = False
+    scale_embedding: bool = False
+    dropout: float = 0.1
+    use_learned_position_embeddings: bool = True
     activation_function: str = "silu"
     # INFERENCE
     max_tokens: int = 128
     # DATAMODULE
     train_ratio: float = 0.99
     img_size: tuple[int] = (32, 256)
-    pct_start = 0.3
+    pct_start = 0.1
     label_smoothing: float = 0.1
     max_grad_norm: float = 0.5
     batch_size: int = 2

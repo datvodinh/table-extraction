@@ -20,7 +20,7 @@ class OCRTransform:
                               position=A.PadIfNeeded.PositionType.TOP_LEFT,
                               border_mode=cv2.BORDER_CONSTANT, value=[255, 255, 255]),
                 A.ToGray(always_apply=True),
-                A.Normalize(),
+                A.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
                 ToTensorV2()
             ])
         else:
@@ -29,7 +29,7 @@ class OCRTransform:
                               position=A.PadIfNeeded.PositionType.TOP_LEFT,
                               border_mode=cv2.BORDER_CONSTANT, value=[255, 255, 255]),
                 A.ToGray(always_apply=True),
-                A.Normalize(),
+                A.Normalize(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5]),
                 ToTensorV2()
             ])
 
