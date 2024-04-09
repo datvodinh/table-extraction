@@ -2,8 +2,8 @@ import wandb
 import pytorch_lightning as pl
 import os
 from pytorch_lightning.loggers import WandbLogger
-from text_recognition.config import SwinTransformerOCRConfig
-from text_recognition.model import SwinTransformerOCR
+from text_recognition.config import TextRecognitionConfig
+from text_recognition.model import TextRecognitionModel
 from text_recognition.datamodule import OCRDataModule
 from text_recognition.util import get_training_parser, ModelCallback
 
@@ -14,7 +14,7 @@ def main():
     args = parser.parse_args()
 
     # CONFIG
-    config = SwinTransformerOCRConfig()
+    config = TextRecognitionConfig.from_args(args.model)
     config.update(args)
     # SEED
     pl.seed_everything(config.seed, workers=True)
@@ -34,7 +34,7 @@ def main():
     # DATAMODULE
     datamodule = OCRDataModule(config, data_dir=args.data_dir)
     # MODEL
-    model = SwinTransformerOCR(config)
+    model = TextRecognitionModel.from_config(config)
     # CALLBACK
     root_path = os.path.join(os.getcwd(), "checkpoints")
     callback = ModelCallback(root_path=root_path)

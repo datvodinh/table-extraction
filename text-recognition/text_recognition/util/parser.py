@@ -4,6 +4,10 @@ import argparse
 def get_training_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        '--model', '-m', type=str, default="vit",
+        help='model name'
+    )
+    parser.add_argument(
         '--data_dir', '-dd', type=str, default=None,
         help='model name'
     )
