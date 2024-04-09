@@ -48,6 +48,7 @@ def main():
         enable_progress_bar=args.pbar,
         deterministic=False,
         precision=args.precision,
+        accumulate_grad_batches=max(config.max_batch_size // config.batch_size, 1),
         strategy="auto"
     )
     # FIT MODEL
