@@ -120,10 +120,11 @@ class SwinTransformerOCR(pl.LightningModule):
         labels_shifted = rearrange(labels_shifted, "b s -> (b s)")[pad_mask == 1]
         logits = rearrange(logits, "b s c -> (b s) c")[pad_mask == 1]
         loss = self.criterion(logits, labels_shifted)
+
         with torch.no_grad():
-            acc = (torch.argmax(logits, dim=-1) == labels_shifted).float().mean()
+            acc = (torch.argmax(logits.detach(), dim=-1) == labels_shifted).float().mean()
             self.log_dict({
-                f"loss_{stage}": loss,
+                f"loss_{stage}": loss.detach().item(),
                 f"acc_{stage}": acc
             }, sync_dist=True)
         return loss
@@ -146,7 +147,9 @@ class SwinTransformerOCR(pl.LightningModule):
                 optimizer=optimizer,
                 max_lr=self.config.lr,
                 total_steps=self.trainer.estimated_stepping_batches,
-                pct_start=self.config.pct_start
+                pct_start=self.config.pct_start,
+                div_factor=self.config.div_factor,
+                final_div_factor=self.config.final_div_factor
             ),
             'interval': 'step',
             'frequency': 1
