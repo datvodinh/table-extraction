@@ -1,6 +1,7 @@
 import wandb
 import pytorch_lightning as pl
 import os
+import torch
 from pytorch_lightning.loggers import WandbLogger
 from text_recognition.config import TextRecognitionConfig
 from text_recognition.model import TextRecognitionModel
@@ -38,6 +39,8 @@ def main():
     # CALLBACK
     root_path = os.path.join(os.getcwd(), "checkpoints")
     callback = ModelCallback(root_path=root_path)
+    # STRATEGY
+    strategy = 'ddp_find_unused_parameters_true' if torch.cuda.is_available() else 'auto'
     # TRAINER
     trainer = pl.Trainer(
         default_root_dir=root_path,
@@ -49,7 +52,7 @@ def main():
         deterministic=False,
         precision=args.precision,
         accumulate_grad_batches=max(config.max_batch_size // config.batch_size, 1),
-        strategy="auto"
+        strategy=strategy
     )
     # FIT MODEL
     trainer.fit(model=model, datamodule=datamodule)
