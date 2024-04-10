@@ -14,7 +14,7 @@ class VisionTransformerOCRConfig:
     div_factor: int = 20
     final_div_factor: int = 100
     train_ratio: float = 0.99
-    img_size: tuple[int] = (64, 256)
+    img_size: tuple[int] = (32, 128)
     pct_start = 0.1
     label_smoothing: float = 0
     max_grad_norm: float = 0.5
