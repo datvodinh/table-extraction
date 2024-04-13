@@ -1,1 +1,4 @@
-from .model import TableStructureRecognitionInference
+from .model import (
+    TableStructureRecognitionInference,
+    TableStructureRecognitionOutput
+)

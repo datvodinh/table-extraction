@@ -167,3 +167,7 @@ checkpoints
 *.csv
 *.txt
 .DS_Store
+test
+*.tar
+*.gz
+onnx

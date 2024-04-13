@@ -1,1 +1,4 @@
-from .model import TableDetectionInference
+from .model import (
+    TableDetectionInference,
+    TableDetectionOutput
+)
