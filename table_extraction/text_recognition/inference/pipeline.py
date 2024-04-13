@@ -2,8 +2,8 @@ import torch
 import cv2
 import numpy as np
 from PIL.Image import Image
-from text_recognition.datamodule import OCRTransform
-from text_recognition.model import TextRecognitionModel
+from ..datamodule import OCRTransform
+from ..model import TextRecognitionModel
 
 
 class TextRecognitionInference:

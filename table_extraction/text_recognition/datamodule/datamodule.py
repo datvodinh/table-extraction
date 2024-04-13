@@ -5,9 +5,9 @@ import torch
 import pytorch_lightning as pl
 import torch.distributed
 from torch.utils.data import DataLoader, Dataset
-from text_recognition.config import SwinTransformerOCRConfig
-from text_recognition.datamodule.transform import OCRTransform
-from text_recognition.tokenizer import OCRTokenizer
+from ..config import SwinTransformerOCRConfig
+from .transform import OCRTransform
+from ..tokenizer import OCRTokenizer
 
 
 class OCRDataset(Dataset):

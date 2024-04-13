@@ -8,8 +8,8 @@ from transformers import (
     Swinv2ForImageClassification,
     Swinv2Config
 )
-from text_recognition.config import SwinTransformerOCRConfig
-from text_recognition.tokenizer import OCRTokenizer
+from ..config import SwinTransformerOCRConfig
+from ..tokenizer import OCRTokenizer
 
 
 class SwinTransformerEncoder(nn.Module):

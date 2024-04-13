@@ -16,7 +16,7 @@ class TextDetectionInference:
     def __init__(self) -> None:
         pass
 
-    def _process_image(data: np.ndarray | Image.Image | str):
+    def _process_image(self, data: np.ndarray | Image.Image | str):
         if isinstance(data, Image.Image):
             image = np.asarray(data)
         elif isinstance(data, str):
@@ -35,8 +35,8 @@ class TextDetectionInference:
 
     def _get_bounding_boxes(self, image: np.ndarray, predict: dict):
         results = []
-        for i in range(0, len(predict["text"])):
-            if len(predict["text"][i]) > 0:
+        for i in range(len(predict["text"])):
+            if int(predict["conf"][i]) > 0:
                 res = {}
                 res['xmin'] = predict["left"][i]
                 res['ymin'] = predict["top"][i]
@@ -50,7 +50,7 @@ class TextDetectionInference:
         return results
 
     def _draw_bounding_boxes(self, image: np.ndarray, predict: dict):
-        for i in range(0, len(predict["text"])):
+        for i in range(len(predict["text"])):
             x = predict["left"][i]
             y = predict["top"][i]
             w = predict["width"][i]

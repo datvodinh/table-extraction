@@ -1,7 +1,7 @@
 import torch
 from .swin import SwinTransformerOCR
 from .vit import VisionTransformerOCR
-from text_recognition.config import SwinTransformerOCRConfig, VisionTransformerOCRConfig
+from ..config import SwinTransformerOCRConfig, VisionTransformerOCRConfig
 
 
 class TextRecognitionModel:

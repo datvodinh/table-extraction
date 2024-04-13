@@ -3,10 +3,10 @@ import pytorch_lightning as pl
 import os
 import torch
 from pytorch_lightning.loggers import WandbLogger
-from text_recognition.config import TextRecognitionConfig
-from text_recognition.model import TextRecognitionModel
-from text_recognition.datamodule import OCRDataModule
-from text_recognition.util import get_training_parser, ModelCallback
+from ..config import TextRecognitionConfig
+from ..model import TextRecognitionModel
+from ..datamodule import OCRDataModule
+from ..util import get_training_parser, ModelCallback
 
 
 def main():

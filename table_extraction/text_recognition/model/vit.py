@@ -4,8 +4,8 @@ import pytorch_lightning as pl
 from einops import rearrange
 from torch.optim.lr_scheduler import OneCycleLR
 from transformers import VisionEncoderDecoderModel, ViTForImageClassification
-from text_recognition.config import VisionTransformerOCRConfig
-from text_recognition.tokenizer import OCRTokenizer
+from ..config import VisionTransformerOCRConfig
+from ..tokenizer import OCRTokenizer
 
 
 class VITEncoder(nn.Module):
