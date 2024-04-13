@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "table-detection"
+name = "table-extraction"
 version = "0.1.0"
 description = ""
 authors = ["Võ Đình Đạt <vodinhdat03@gmail.com>"]
@@ -7,10 +7,19 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.10"
-transformers = "^4.39.2"
+transformers = "^4.39.3"
 numpy = "^1.26.4"
 opencv-python = "^4.9.0.80"
 torch = "^2.2.2"
+pytesseract = "^0.3.10"
+lightning = "^2.2.2"
+torchvision = "^0.17.2"
+wandb = "^0.16.6"
+albumentations = "^1.4.3"
+einops = "^0.7.0"
+sentencepiece = "^0.2.0"
+tokenizers = "^0.15.2"
+imagesize = "^1.4.1"
 
 
 [build-system]

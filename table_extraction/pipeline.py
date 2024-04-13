@@ -1,0 +1,2 @@
+class TableExtractionPipeline:
+    pass
